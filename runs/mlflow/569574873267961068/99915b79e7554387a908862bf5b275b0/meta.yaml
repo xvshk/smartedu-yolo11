@@ -1,0 +1,14 @@
+artifact_uri: file:///D:/archive/runs/mlflow/569574873267961068/99915b79e7554387a908862bf5b275b0/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '569574873267961068'
+lifecycle_stage: active
+run_id: 99915b79e7554387a908862bf5b275b0
+run_name: train2
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1766968142868
+status: 1
+tags: []
+user_id: XSK
