@@ -192,9 +192,6 @@ const api = {
     // 学生统计
     getStudentStats: () => request.get('/dashboard/student/stats')
   },
-  
-  // 机器学习模块已移除
-  // MLflow追踪功能仍可通过直接访问MLflow UI使用
 }
 
 export default api

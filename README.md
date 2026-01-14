@@ -1,4 +1,4 @@
-# 课堂行为智能检测与学业画像系统
+# 基于YOLO11课堂行为感知与多维时空数据的大学生学业全景画像与精准预警系统
 
 ## 一、项目概述
 
@@ -356,7 +356,6 @@ erDiagram
         int user_id PK
         varchar username UK
         varchar password_hash
-        varchar email
         enum role
         boolean is_active
         datetime created_at
@@ -367,7 +366,6 @@ erDiagram
         varchar class_name
         varchar grade
         varchar department
-        datetime created_at
     }
     
     STUDENTS {
@@ -376,7 +374,6 @@ erDiagram
         varchar name
         int class_id FK
         int user_id FK
-        datetime created_at
     }
     
     DETECTION_SESSIONS {
@@ -388,32 +385,12 @@ erDiagram
         varchar status
     }
     
-    DETECTION_RECORDS {
-        int record_id PK
-        int session_id FK
-        datetime timestamp
-        int frame_number
-        varchar image_path
-    }
-    
-    BEHAVIOR_ENTRIES {
-        int entry_id PK
-        int record_id FK
-        int student_id FK
-        int class_id
-        float confidence
-        varchar bbox
-        datetime created_at
-    }
-    
     ALERTS {
         int alert_id PK
         int session_id FK
         int alert_level
-        varchar alert_type
         varchar behavior_type
         int behavior_count
-        float confidence
         varchar status
         datetime created_at
     }
