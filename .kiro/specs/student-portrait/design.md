@@ -107,7 +107,7 @@ class PortraitService:
 ### 2. Portrait API Blueprint
 
 ```python
-# backend/api/portrait.py
+# backend/api/PortraitController.py
 
 @portrait_bp.route('/overview', methods=['GET'])
 def get_overview():

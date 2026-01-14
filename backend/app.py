@@ -1,6 +1,7 @@
 """
 Flask后端应用主入口
 Classroom Behavior Detection System - Backend API
+符合程序入口点职责：仅负责应用配置和启动，业务逻辑通过Service层处理
 """
 from flask import Flask
 from flask_cors import CORS
@@ -13,12 +14,15 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.config import Config
-from backend.api import auth_bp, user_bp, portrait_bp
-from backend.api.settings import settings_bp
-from backend.api.detection import detection_bp
-from backend.api.alert import alert_bp
-from backend.api.notification import notification_bp
-from backend.api.dashboard import dashboard_bp
+from backend.controller import auth_bp, user_bp, portrait_bp
+from backend.controller.SettingsController import settings_bp
+from backend.controller.DetectionController import detection_bp
+from backend.controller.AlertController import alert_bp
+from backend.controller.NotificationController import notification_bp
+from backend.controller.DashboardController import dashboard_bp
+
+# 导入服务容器配置
+from backend.service import configure_default_services
 
 # 配置日志
 logging.basicConfig(
@@ -32,6 +36,10 @@ def create_app(config_class=Config):
     """创建Flask应用"""
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # 初始化服务容器
+    configure_default_services()
+    logger.info("Service container configured")
     
     # 初始化扩展
     CORS(app, resources={r"/api/*": {"origins": "*"}})

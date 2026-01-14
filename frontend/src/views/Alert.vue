@@ -81,7 +81,7 @@
                 <el-button size="small" @click="markAllRead" :disabled="unreadCount === 0">
                   全部已读
                 </el-button>
-                <el-button size="small" type="primary" @click="showRuleDialog = true">
+                <el-button size="small" type="primary" @click="openRuleDialog">
                   <el-icon><Setting /></el-icon>
                   规则配置
                 </el-button>
@@ -272,7 +272,7 @@
     <!-- 规则配置对话框 -->
     <el-dialog v-model="showRuleDialog" title="预警规则配置" width="800px">
       <div class="rule-config">
-        <el-button type="primary" size="small" style="margin-bottom: 15px;">
+        <el-button type="primary" size="small" style="margin-bottom: 15px;" @click="showCreateRuleDialog = true">
           <el-icon><Plus /></el-icon>
           添加规则
         </el-button>
@@ -305,6 +305,55 @@
           </el-table-column>
         </el-table>
       </div>
+    </el-dialog>
+
+    <!-- 创建/编辑规则对话框 -->
+    <el-dialog v-model="showCreateRuleDialog" :title="editingRule ? '编辑规则' : '创建规则'" width="600px">
+      <el-form :model="ruleForm" :rules="ruleFormRules" ref="ruleFormRef" label-width="120px">
+        <el-form-item label="规则名称" prop="rule_name">
+          <el-input v-model="ruleForm.rule_name" placeholder="请输入规则名称" />
+        </el-form-item>
+        <el-form-item label="规则类型" prop="rule_type">
+          <el-select v-model="ruleForm.rule_type" placeholder="请选择规则类型">
+            <el-option label="频率规则" value="frequency" />
+            <el-option label="阈值规则" value="threshold" />
+            <el-option label="组合规则" value="combination" />
+            <el-option label="持续时间" value="duration" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="行为类型" prop="behavior_type">
+          <el-select v-model="ruleForm.behavior_type" placeholder="请选择行为类型">
+            <el-option label="睡觉" value="睡觉" />
+            <el-option label="交谈" value="交谈" />
+            <el-option label="使用电子设备" value="使用电子设备" />
+            <el-option label="低头" value="低头" />
+            <el-option label="站立" value="站立" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="预警级别" prop="alert_level">
+          <el-select v-model="ruleForm.alert_level" placeholder="请选择预警级别">
+            <el-option label="正常" :value="0" />
+            <el-option label="轻度预警" :value="1" />
+            <el-option label="中度预警" :value="2" />
+            <el-option label="严重预警" :value="3" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="阈值数量" prop="threshold_count">
+          <el-input-number v-model="ruleForm.threshold_count" :min="1" :max="100" />
+        </el-form-item>
+        <el-form-item label="时间窗口(秒)" prop="time_window_seconds">
+          <el-input-number v-model="ruleForm.time_window_seconds" :min="10" :max="3600" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="ruleForm.description" type="textarea" placeholder="请输入规则描述" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateRuleDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveRule" :loading="saveRuleLoading">
+          {{ editingRule ? '更新' : '创建' }}
+        </el-button>
+      </template>
     </el-dialog>
   </PageLayout>
 </template>
@@ -345,7 +394,43 @@ const filterBehavior = ref(null)
 // 对话框
 const showDetailDialog = ref(false)
 const showRuleDialog = ref(false)
+const showCreateRuleDialog = ref(false)
 const selectedAlert = ref(null)
+
+// 创建规则相关
+const editingRule = ref(null)
+const saveRuleLoading = ref(false)
+const ruleFormRef = ref(null)
+const ruleForm = ref({
+  rule_name: '',
+  rule_type: '',
+  behavior_type: '',
+  alert_level: 1,
+  threshold_count: 1,
+  time_window_seconds: 60,
+  description: ''
+})
+
+const ruleFormRules = {
+  rule_name: [
+    { required: true, message: '请输入规则名称', trigger: 'blur' }
+  ],
+  rule_type: [
+    { required: true, message: '请选择规则类型', trigger: 'change' }
+  ],
+  behavior_type: [
+    { required: true, message: '请选择行为类型', trigger: 'change' }
+  ],
+  alert_level: [
+    { required: true, message: '请选择预警级别', trigger: 'change' }
+  ],
+  threshold_count: [
+    { required: true, message: '请输入阈值数量', trigger: 'blur' }
+  ],
+  time_window_seconds: [
+    { required: true, message: '请输入时间窗口', trigger: 'blur' }
+  ]
+}
 
 // 预警级别颜色
 const levelColors = ['#67C23A', '#909399', '#E6A23C', '#F56C6C']
@@ -362,7 +447,7 @@ const pageActions = computed(() => [
     label: '规则配置',
     type: 'primary',
     icon: 'Setting',
-    onClick: () => { showRuleDialog.value = true }
+    onClick: openRuleDialog
   }
 ])
 
@@ -692,9 +777,14 @@ const loadUnreadCount = async () => {
 const loadRules = async () => {
   rulesLoading.value = true
   try {
+    console.log('Loading rules...')
     const res = await api.alert.getRules()
+    console.log('Rules response:', res)
     if (res.success) {
       rules.value = res.data.items || []
+      console.log('Loaded rules:', rules.value)
+    } else {
+      console.error('API returned success=false:', res)
     }
   } catch (error) {
     console.error('Load rules error:', error)
@@ -788,13 +878,80 @@ const deleteRule = async (row) => {
 
 // 编辑规则
 const editRule = (row) => {
-  ElMessage.info('编辑功能开发中')
-  console.log('Edit rule:', row)
+  editingRule.value = row
+  ruleForm.value = {
+    rule_name: row.rule_name,
+    rule_type: row.rule_type,
+    behavior_type: row.behavior_type,
+    alert_level: row.alert_level,
+    threshold_count: row.threshold_count,
+    time_window_seconds: row.time_window_seconds,
+    description: row.description || ''
+  }
+  showCreateRuleDialog.value = true
+}
+
+// 保存规则
+const saveRule = async () => {
+  if (!ruleFormRef.value) return
+  
+  try {
+    await ruleFormRef.value.validate()
+    saveRuleLoading.value = true
+    
+    if (editingRule.value) {
+      // 更新规则
+      const res = await api.alert.updateRule(editingRule.value.rule_id, ruleForm.value)
+      ElMessage.success('规则更新成功')
+      
+      // 重新加载规则列表
+      await loadRules()
+    } else {
+      // 创建规则
+      const res = await api.alert.createRule(ruleForm.value)
+      ElMessage.success('规则创建成功')
+      
+      // 重新加载规则列表
+      await loadRules()
+    }
+    
+    showCreateRuleDialog.value = false
+    resetRuleForm()
+    
+  } catch (error) {
+    console.error('Save rule error:', error)
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    saveRuleLoading.value = false
+  }
+}
+
+// 重置规则表单
+const resetRuleForm = () => {
+  editingRule.value = null
+  ruleForm.value = {
+    rule_name: '',
+    rule_type: '',
+    behavior_type: '',
+    alert_level: 1,
+    threshold_count: 1,
+    time_window_seconds: 60,
+    description: ''
+  }
+  if (ruleFormRef.value) {
+    ruleFormRef.value.resetFields()
+  }
 }
 
 // 记录干预
 const recordIntervention = () => {
   ElMessage.info('干预记录功能开发中')
+}
+
+// 打开规则对话框
+const openRuleDialog = async () => {
+  showRuleDialog.value = true
+  await loadRules()
 }
 
 // 生命周期

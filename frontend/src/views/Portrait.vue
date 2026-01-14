@@ -242,6 +242,21 @@ const renderBehaviorChart = () => {
     itemStyle: { color: behaviorColors[key] || '#909399' }
   })).filter(d => d.value > 0)
   
+  // 如果没有数据，显示空状态
+  if (data.length === 0) {
+    behaviorChart.setOption({
+      title: {
+        text: '暂无行为数据',
+        subtext: '请先进行课堂行为检测',
+        left: 'center',
+        top: 'center',
+        textStyle: { color: '#909399', fontSize: 16 },
+        subtextStyle: { color: '#c0c4cc', fontSize: 13 }
+      }
+    })
+    return
+  }
+  
   behaviorChart.setOption({
     tooltip: { 
       trigger: 'item', 
@@ -290,6 +305,21 @@ const renderTrendChart = () => {
   
   const dates = attentionTrend.value.map(d => d.date)
   const rates = attentionTrend.value.map(d => (d.attention_rate * 100).toFixed(1))
+  
+  // 如果没有数据，显示空状态
+  if (dates.length === 0) {
+    trendChart.setOption({
+      title: {
+        text: '暂无趋势数据',
+        subtext: '请先进行课堂行为检测',
+        left: 'center',
+        top: 'center',
+        textStyle: { color: '#909399', fontSize: 16 },
+        subtextStyle: { color: '#c0c4cc', fontSize: 13 }
+      }
+    })
+    return
+  }
   
   trendChart.setOption({
     tooltip: { 
